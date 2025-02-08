@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String     @id @default(uuid())
+  clerkId    String     @unique @map("clerk_id")
+  email      String     @unique
+  businesses Business[]
+  premium    Boolean    @default(false)
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  @@index([clerkId])
+  @@map("users")
+}
+
+model Business {
+  id            String         @id @default(uuid())
+  name          String
+  userId        String         @map("user_id")
+  user          User           @relation(fields: [userId], references: [clerkId])
+  products      Product[]
+  sales         Sale[]
+  notifications Notification[]
+  bills         Bill[]
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  image         String?
+
+  @@index([userId])
+  @@map("businesses")
+}
+
+model Product {
+  id                String     @id @default(uuid())
+  name              String
+  price             Float
+  stock             Int
+  lowStockThreshold Int        @map("low_stock_threshold")
+  businessId        String     @map("business_id")
+  business          Business   @relation(fields: [businessId], references: [id])
+  sales             Sale[]
+  billItems         BillItem[]
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+  image             String?
+
+  @@index([businessId])
+  @@map("products")
+}
+
+model Sale {
+  id         String   @id @default(uuid())
+  productId  String   @map("product_id")
+  product    Product  @relation(fields: [productId], references: [id])
+  businessId String   @map("business_id")
+  business   Business @relation(fields: [businessId], references: [id])
+  quantity   Int
+  totalPrice Float    @map("total_price")
+  soldAt     DateTime @default(now()) @map("sold_at")
+
+  @@index([productId])
+  @@index([businessId])
+  @@index([soldAt])
+  @@map("sales")
+}
+
+model Bill {
+  id            String       @id @default(uuid())
+  businessId    String       @map("business_id")
+  business      Business     @relation(fields: [businessId], references: [id])
+  billItems     BillItem[]
+  totalAmount   Float        @map("total_amount")
+  status        BillStatus   @default(PENDING)
+  paymentMode   PaymentMode?
+  customerName  String?      @map("customer_name")
+  customerPhone String?      @map("customer_phone")
+  customerEmail String?      @map("customer_email")
+  notes         String?
+  createdAt     DateTime     @default(now()) @map("created_at")
+  paidAt        DateTime?    @map("paid_at")
+
+  @@index([businessId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("bills")
+}
+
+model BillItem {
+  id        String  @id @default(uuid())
+  billId    String  @map("bill_id")
+  bill      Bill    @relation(fields: [billId], references: [id])
+  productId String  @map("product_id")
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Float   @map("unit_price")
+  discount  Float   @default(0)
+  subtotal  Float
+
+  @@index([billId])
+  @@index([productId])
+  @@map("bill_items")
+}
+
+model Notification {
+  id         String             @id @default(uuid())
+  businessId String             @map("business_id")
+  business   Business           @relation(fields: [businessId], references: [id])
+  type       NotificationType
+  message    String
+  status     NotificationStatus @default(UNREAD)
+  createdAt  DateTime           @default(now()) @map("created_at")
+  readAt     DateTime?          @map("read_at")
+
+  @@index([businessId])
+  @@index([status])
+  @@index([type])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  LOWSTOCK
+  MILESTONE
+  SALES_ALERT
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+}
+
+enum BillStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMode {
+  CASH
+  CARD
+  UPI
+  BANK_TRANSFER
+}
