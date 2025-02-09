@@ -1,13 +1,19 @@
-// import { Button } from "@/components/ui/moving-border";
-import { motion } from "framer-motion";
-import { Poppins } from "next/font/google";
-import Link from "next/link";
+import { cn } from "@/lib/utils"
+import { motion } from "framer-motion"
+import { Poppins, Pacifico } from "next/font/google"
+import Link from "next/link"
 
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "700"],
   variable: "--font-poppins",
-});
+})
+
+const pacifico = Pacifico({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-pacifico",
+})
 
 function ElegantShape({
   className,
@@ -15,14 +21,14 @@ function ElegantShape({
   width = 400,
   height = 100,
   rotate = 0,
-  gradient = "from-blue-500/[0.15]",
+  gradient = "from-indigo-300 via-white/20 to-rose-300",
 }: {
-  className?: string;
-  delay?: number;
-  width?: number;
-  height?: number;
-  rotate?: number;
-  gradient?: string;
+  className?: string
+  delay?: number
+  width?: number
+  height?: number
+  rotate?: number
+  gradient?: string
 }) {
   return (
     <motion.div
@@ -47,17 +53,17 @@ function ElegantShape({
         className="relative"
       >
         <div
-          className={`absolute inset-0 rounded-full bg-gradient-to-r to-transparent ${gradient} backdrop-blur-[2px] border-2 border-white/[0.15] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] after:absolute after:inset-0 after:rounded-full after:bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.2),transparent_70%)]`}
+          className={`absolute inset-0 rounded-full bg-gradient-to-r ${gradient} opacity-20 backdrop-blur-[2px] border-2 border-white/[0.15] shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] after:absolute after:inset-0 after:rounded-full after:bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.2),transparent_70%)]`}
         />
       </motion.div>
     </motion.div>
-  );
+  )
 }
 
 export default function Hero() {
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[#030303]">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.05] via-transparent to-purple-500/[0.05] blur-3xl" />
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/[0.05] via-white/[0.05] to-rose-500/[0.05] blur-3xl" />
 
       <div className="absolute inset-0 overflow-hidden">
         <ElegantShape
@@ -65,7 +71,6 @@ export default function Hero() {
           width={600}
           height={140}
           rotate={12}
-          gradient="from-blue-500/[0.15]"
           className="left-[-10%] md:left-[-5%] top-[15%] md:top-[20%]"
         />
         <ElegantShape
@@ -73,7 +78,6 @@ export default function Hero() {
           width={500}
           height={120}
           rotate={-15}
-          gradient="from-purple-500/[0.15]"
           className="right-[-5%] md:right-[0%] top-[70%] md:top-[75%]"
         />
         <ElegantShape
@@ -81,7 +85,6 @@ export default function Hero() {
           width={300}
           height={80}
           rotate={-8}
-          gradient="from-cyan-500/[0.15]"
           className="left-[5%] md:left-[10%] bottom-[5%] md:bottom-[10%]"
         />
       </div>
@@ -100,7 +103,12 @@ export default function Hero() {
                 Transform Your Business
               </span>
               <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+              <span
+                className={cn(
+                  "bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white/90 to-rose-300",
+                  pacifico.className,
+                )}
+              >
                 with Smart Inventory
               </span>
             </h1>
@@ -111,10 +119,9 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            <p className="text-base sm:text-lg md:text-xl text-white/60 mb-8 leading-relaxed font-light tracking-wide  mx-auto px-4">
-              Track stock, analyze sales, and make data-driven decisions in
-              real-time. Elevate your operations to new heights of efficiency
-              and profitability.
+            <p className="text-base sm:text-lg md:text-xl text-white/60 mb-8 leading-relaxed font-light tracking-wide mx-auto px-4">
+              Track stock, analyze sales, and make data-driven decisions in real-time. Elevate your operations to new
+              heights of efficiency and profitability.
             </p>
           </motion.div>
 
@@ -125,11 +132,11 @@ export default function Hero() {
               transition={{ duration: 0.8, delay: 0.6 }}
             >
               <a
-              href="#features"
-              className="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
-            >
-              Discover Features
-            </a>
+                href="#features"
+                className="inline-block bg-gradient-to-r from-indigo-300 via-white/90 to-rose-300 text-gray-900 font-semibold py-3 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+              >
+                Discover Features
+              </a>
             </motion.div>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -138,10 +145,10 @@ export default function Hero() {
             >
               <Link
                 href="/dashboard"
-                className="relative inline-flex h-12  overflow-hidden rounded-full p-[2px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50"
+                className="relative inline-flex h-12 overflow-hidden rounded-full p-[2px] focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 focus:ring-offset-gray-900"
               >
                 <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
-                <span className="inline-flex h-full w-full  cursor-pointer items-center justify-center rounded-full bg-slate-950 px-5 py-1 text-sm font-medium text-white backdrop-blur-3xl">
+                <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-gray-900 px-5 py-1 text-sm font-medium text-white backdrop-blur-3xl">
                   {true ? "Dashboard" : "Get Started"}
                 </span>
               </Link>
@@ -152,5 +159,6 @@ export default function Hero() {
 
       <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-transparent to-[#030303]/80 pointer-events-none" />
     </div>
-  );
+  )
 }
+

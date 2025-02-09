@@ -78,7 +78,7 @@ export default function SubscriptionPlans() {
           transition={{ duration: 0.8 }}
           className="text-4xl font-bold text-center mb-12"
         >
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-white/90 to-rose-300">
             Choose Your Plan
           </span>
         </motion.h2>
