@@ -14,6 +14,7 @@ import {
   getBusiness,
   getNotifications,
   getProduct,
+  getTopProductsByMonth,
   updateNotificationStatus,
   updateProduct,
 } from "./query";
@@ -908,3 +909,44 @@ export const generateBill = async (
     };
   }
 };
+
+export const getTopProduct = async (businessId: string) => {
+  try {
+    // Fetch the current user
+    const user = await onCurrentUser();
+    if (!user) {
+      return { status: 401, data: "User not authenticated" };
+    }
+
+    // Ensure the user exists in the database
+    const existingUser = await findUser(user.id);
+    if (!existingUser) {
+      return { status: 404, data: "User not found in the database" };
+    }
+
+    // Ensure the business belongs to the current user
+    const business = await getBusiness(businessId, user.id);
+    if (!business) {
+      return { status: 404, data: "Business not found for the current user" };
+    }
+    
+    const data = await getTopProductsByMonth(businessId)
+    if(data) {
+      return {
+        status: 200,
+        data:data
+      }
+    }
+    return {
+      status: 400,
+      data: []
+    }
+  } catch (error) {
+    console.log(error)
+    return {
+      status: 400,
+      data: []
+    }
+  }
+}
+

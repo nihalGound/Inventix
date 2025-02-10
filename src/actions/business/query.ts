@@ -1,5 +1,5 @@
 import { client } from "@/lib/db";
-import { getStartDateForPeriod } from "@/lib/utils";
+import { startOfMonth, subMonths, format, subDays } from "date-fns";
 
 export const createBusiness = async (
   name: string,
@@ -88,6 +88,114 @@ export const deleteProduct = async (productId: string, businessId: string) => {
   });
 };
 
+interface TopProduct {
+  name: string;
+  revenue: number;
+}
+
+interface MonthlyTopProducts {
+  month: string;
+  products: TopProduct[];
+}
+
+export async function getTopProductsByMonth(
+  businessId: string
+): Promise<MonthlyTopProducts[]> {
+  // Get start date (6 months ago from current date)
+  const startDate = startOfMonth(subMonths(new Date(), 5));
+
+  const sales = await client.sale.findMany({
+    where: {
+      businessId,
+      soldAt: {
+        gte: startDate,
+      },
+    },
+    select: {
+      soldAt: true,
+      totalPrice: true,
+      product: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: {
+      soldAt: "desc",
+    },
+  });
+
+  // Group sales by month and calculate revenue per product
+  const monthlyProducts = sales.reduce<
+    Record<string, Record<string, TopProduct>>
+  >((months, sale) => {
+    const month = format(sale.soldAt, "MMMM");
+    const productId = sale.product.id;
+
+    if (!months[month]) {
+      months[month] = {};
+    }
+
+    if (!months[month][productId]) {
+      months[month][productId] = {
+        name: sale.product.name,
+        revenue: 0,
+      };
+    }
+
+    months[month][productId].revenue += sale.totalPrice;
+    return months;
+  }, {});
+
+  // Transform the data into the required format with top 3 products per month
+  const result = Object.entries(monthlyProducts).map(([month, products]) => ({
+    month,
+    products: Object.values(products)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 3)
+      .map((product) => ({
+        name: product.name,
+        revenue: Number(product.revenue.toFixed(2)),
+      })),
+  }));
+
+  // Sort months chronologically
+  const monthOrder = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  return result.sort(
+    (a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month)
+  );
+}
+
+export async function getLowStockProduct(businessId: string) {
+  return await client.product.findMany({
+    where: {
+      businessId: businessId,
+      stock: {
+        lte: client.product.fields.lowStockThreshold,
+      },
+    },
+    orderBy: {
+      stock: "asc",
+    },
+    take: 5,
+  });
+}
+
 export const fetchAnalyticsData = async (businessId: string) => {
   // Fetch the sales data for the given business
   const totalSales = await client.sale.aggregate({
@@ -106,57 +214,34 @@ export const fetchAnalyticsData = async (businessId: string) => {
     },
   });
 
-  // Fetch the number of orders
-  const totalOrders = await client.sale.count({
-    where: {
-      businessId: businessId,
-    },
-  });
+  const topProductByMonth = getTopProductsByMonth(businessId);
 
-  const topProductByQuantity = await client.sale.groupBy({
-    by: ["productId"],
-    where: {
-      businessId: businessId,
-    },
-    _sum: {
-      quantity: true,
-    },
-    orderBy: {
-      _sum: {
-        quantity: "desc",
-      },
-    },
-    take: 3, // Get top product
-  });
-
-  const topProductByRevenue = await client.sale.groupBy({
-    by: ["productId"],
-    where: {
-      businessId: businessId,
-    },
-    _sum: {
-      totalPrice: true,
-    },
-    orderBy: {
-      _sum: {
-        totalPrice: "desc",
-      },
-    },
-    take: 3, // Get top product
-  });
+  const lowStock = getLowStockProduct(businessId);
 
   return {
     totalSales: totalSales._sum.totalPrice || 0,
     totalProducts,
-    totalOrders,
-    topProductByQuantity,
-    topProductByRevenue,
+    topProductByMonth,
+    lowStock,
   };
+};
+
+const getStartDate = (period: string): Date => {
+  switch (period) {
+    case "30_days":
+      return subDays(new Date(), 30);
+    case "7_days":
+      return subDays(new Date(), 7);
+    default:
+      throw new Error(
+        "Invalid period. Valid options are '30_days' or '7_days'."
+      );
+  }
 };
 
 export const fetchSalesReport = async (businessId: string, period: string) => {
   // Determine the date range for the specified period
-  const startDate = getStartDateForPeriod(period);
+  const startDate = getStartDate(period);
   const endDate = new Date(); // Current date
 
   // Fetch the sales data for the given period
@@ -170,14 +255,70 @@ export const fetchSalesReport = async (businessId: string, period: string) => {
     },
   });
 
+  // Fetch the total number of orders within the period
+  const totalOrders = await client.sale.count({
+    where: {
+      businessId: businessId,
+      soldAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+  });
+
+  // Fetch top products by quantity sold
+  const topProductByQuantity = await client.sale.groupBy({
+    by: ["productId"],
+    where: {
+      businessId: businessId,
+      soldAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    _sum: {
+      quantity: true,
+    },
+    orderBy: {
+      _sum: {
+        quantity: "desc",
+      },
+    },
+    take: 3, // Get the top 3 products
+  });
+
+  // Fetch top products by revenue generated
+  const topProductByRevenue = await client.sale.groupBy({
+    by: ["productId"],
+    where: {
+      businessId: businessId,
+      soldAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    _sum: {
+      totalPrice: true,
+    },
+    orderBy: {
+      _sum: {
+        totalPrice: "desc",
+      },
+    },
+    take: 3, // Get the top 3 products
+  });
+
   // Summarize the sales data (e.g., total sales, average sales, etc.)
   const totalSales = salesData.reduce((sum, sale) => sum + sale.totalPrice, 0);
   const averageSales = totalSales / salesData.length || 0;
 
-  // Example of additional sales data (you can modify this as per your requirements)
+  // Return the report with summarized data and details
   return {
     totalSales,
     averageSales,
+    totalOrders,
+    topProductByQuantity,
+    topProductByRevenue,
     salesData,
   };
 };
