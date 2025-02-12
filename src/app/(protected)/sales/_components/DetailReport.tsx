@@ -1,14 +1,7 @@
-import React from "react";
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+"use client"
+
+import { useMemo } from "react"
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 const sampleData = [
   { date: "2025-01-10", totalSales: 1200, totalOrders: 15 },
@@ -41,39 +34,48 @@ const sampleData = [
   { date: "2025-02-06", totalSales: 2000, totalOrders: 26 },
   { date: "2025-02-07", totalSales: 1500, totalOrders: 19 },
   { date: "2025-02-08", totalSales: 1300, totalOrders: 15 },
-];
-function DetailReport() {
-  return (
-    <div>
-      <ResponsiveContainer width="100%" height={400}>
-        <LineChart
-          data={sampleData}
-          margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-          <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-          <Tooltip />
-          <Legend />
-          <Line
-            yAxisId="left"
-            type="monotone"
-            dataKey="totalSales"
-            name="Total Sales"
-            stroke="#8884d8"
-          />
-          <Line
-            yAxisId="right"
-            type="monotone"
-            dataKey="totalOrders"
-            name="Total Orders"
-            stroke="#82ca9d"
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
+]
+
+interface DetailReportProps {
+  startDate: string
+  endDate: string
 }
 
-export default DetailReport;
+function DetailReport({ startDate, endDate }: DetailReportProps) {
+  const filteredData = useMemo(() => {
+    if (!startDate && !endDate) return sampleData
+
+    return sampleData.filter((item) => {
+      const date = new Date(item.date)
+      const start = startDate ? new Date(startDate) : new Date(0)
+      const end = endDate ? new Date(endDate) : new Date(8640000000000000)
+      return date >= start && date <= end
+    })
+  }, [startDate, endDate])
+
+  if (filteredData.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[400px] text-muted-foreground">
+        No data available for the selected date range
+      </div>
+    )
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height={400}>
+      <LineChart data={filteredData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="date" />
+        <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+        <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+        <Tooltip />
+        <Legend />
+        <Line yAxisId="left" type="monotone" dataKey="totalSales" name="Total Sales" stroke="#8884d8" />
+        <Line yAxisId="right" type="monotone" dataKey="totalOrders" name="Total Orders" stroke="#82ca9d" />
+      </LineChart>
+    </ResponsiveContainer>
+  )
+}
+
+export default DetailReport
+

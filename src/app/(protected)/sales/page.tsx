@@ -8,6 +8,7 @@ import { TopProducts } from "./_components/TopProducts";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import SalesHistory from "./_components/SalesHistory";
+import ReportsPage from "./_components/Report";
 
 export default function Sales() {
   const [selectedDate, setSelectedDate] = useState("");
@@ -99,6 +100,10 @@ export default function Sales() {
             <InventoryStatus />
           </div>
         </div>
+      </div>
+
+      <div>
+        <ReportsPage />
       </div>
 
       <Card className="mt-6">

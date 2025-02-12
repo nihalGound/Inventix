@@ -48,7 +48,7 @@ export function SalesOverview() {
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="date" />
           <YAxis />
-          <Tooltip />
+          <Tooltip  />
           <Legend />
           <Line
             type="monotone"
