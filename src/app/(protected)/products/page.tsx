@@ -19,8 +19,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search } from "lucide-react";
+import { Download, Plus, Search } from "lucide-react";
 import React, { useState } from "react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import Image from "next/image";
 
 interface Product {
   id: number;
@@ -29,6 +31,7 @@ interface Product {
   stock: number;
   price: number;
   lowThreshold: number;
+  image: string;
 }
 
 function Products() {
@@ -40,6 +43,7 @@ function Products() {
       stock: 100,
       lowThreshold: 20,
       price: 30,
+      image: "/hello.png",
     },
     {
       id: 2,
@@ -48,6 +52,7 @@ function Products() {
       stock: 200,
       lowThreshold: 20,
       price: 50,
+      image: "/hello.png",
     },
     {
       id: 3,
@@ -56,6 +61,7 @@ function Products() {
       stock: 10,
       lowThreshold: 20,
       price: 10,
+      image: "/hello.png",
     },
   ];
   const [products, setProducts] = useState<Product[]>(allProducts);
@@ -65,12 +71,14 @@ function Products() {
 
   const applyFilter = (value: "name" | "stock" | "price") => {
     const sortedProducts = [...products];
-    if (value === "name") sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
-    else if (value === "price") sortedProducts.sort((a, b) => a.price - b.price);
-    else if (value === "stock") sortedProducts.sort((a, b) => a.stock - b.stock);
+    if (value === "name")
+      sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
+    else if (value === "price")
+      sortedProducts.sort((a, b) => a.price - b.price);
+    else if (value === "stock")
+      sortedProducts.sort((a, b) => a.stock - b.stock);
     setProducts(sortedProducts);
   };
-  
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,6 +167,7 @@ function Products() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Image</TableHead>
                   <TableHead>Product</TableHead>
                   <TableHead>Barcode</TableHead>
                   <TableHead>Stock</TableHead>
@@ -169,6 +178,22 @@ function Products() {
               <TableBody>
                 {products.map((product) => (
                   <TableRow key={product.id}>
+                    <TableCell>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost">{"Image"}</Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                          <Image
+                            src={product.image || "/placeholder.svg"}
+                            alt={product.name}
+                            width={400}
+                            height={400}
+                            className="rounded-lg"
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    </TableCell>
                     <TableCell>{product.name}</TableCell>
                     <TableCell>{product.barcode}</TableCell>
                     <TableCell>{product.stock}</TableCell>
@@ -193,6 +218,12 @@ function Products() {
                             : "In stock"}
                         </span>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="outline" size="sm" onClick={() => {}}>
+                        <Download className="mr-2 h-4 w-4" />
+                        Barcode
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
