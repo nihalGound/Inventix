@@ -60,7 +60,7 @@ export function AppSidebar() {
   const SidebarContent = () => (
     <>
       <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">InventoryPro</h1>
+        <h1 className="text-2xl font-bold mb-4">Inventix</h1>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="w-full justify-between">
