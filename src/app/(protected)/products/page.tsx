@@ -23,9 +23,10 @@ import { Download, Plus, Search } from "lucide-react";
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import Image from "next/image";
+import { downloadBarcode } from "@/lib/utils";
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   barcode: string;
   stock: number;
@@ -37,8 +38,8 @@ interface Product {
 function Products() {
   const allProducts: Product[] = [
     {
-      id: 1,
-      name: "Milk",
+      id: "11eerrse11",
+      name: "compression Tshirt",
       barcode: "A124Milk",
       stock: 100,
       lowThreshold: 20,
@@ -46,7 +47,7 @@ function Products() {
       image: "/hello.png",
     },
     {
-      id: 2,
+      id: "11eerrse12",
       name: "Bread",
       barcode: "A124Milk",
       stock: 200,
@@ -55,7 +56,7 @@ function Products() {
       image: "/hello.png",
     },
     {
-      id: 3,
+      id: "11eerrse13",
       name: "Cheese",
       barcode: "A124Milk",
       stock: 10,
@@ -220,7 +221,11 @@ function Products() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Button variant="outline" size="sm" onClick={() => {}}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadBarcode(product.id)}
+                      >
                         <Download className="mr-2 h-4 w-4" />
                         Barcode
                       </Button>

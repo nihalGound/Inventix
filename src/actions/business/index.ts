@@ -783,12 +783,12 @@ export const generateBill = async (
   items: {
     productId: string;
     quantity: number;
-    discount?: number;
   }[],
   customerEmail?: string,
   customerName?: string,
   customerPhone?: string,
-  notes?: string
+  notes?: string,
+  discount?: number // Discount in percentage
 ) => {
   try {
     // Input validation
@@ -831,7 +831,6 @@ export const generateBill = async (
       productId: string;
       quantity: number;
       unitPrice: number;
-      discount: number;
       subtotal: number;
     }[] = [];
     const errors: string[] = [];
@@ -846,17 +845,23 @@ export const generateBill = async (
           }
 
           const unitPrice = product.price;
-          const discount = item.discount || 0;
-          const subtotal = unitPrice * item.quantity - discount;
+          const subtotal = unitPrice * item.quantity;
           totalAmount += subtotal;
 
           billItems.push({
             productId: item.productId,
             quantity: item.quantity,
             unitPrice,
-            discount,
             subtotal,
           });
+
+          // Update product stock
+          await updateProduct(item.productId, { stock: product.stock - item.quantity });
+
+          // Send low stock notification if necessary
+          if (product.stock - item.quantity <= product.lowStockThreshold) {
+            // Send notification for stock alert
+          }
         } catch (error) {
           console.error(`Error processing item ${item.productId}:`, error);
           errors.push(`Error processing item ${item.productId}: ${error}`);
@@ -875,11 +880,17 @@ export const generateBill = async (
       };
     }
 
+    // Apply discount to the total amount (if provided)
+    let discountedAmount = totalAmount;
+    if (discount && discount > 0) {
+      discountedAmount = totalAmount - (totalAmount * discount) / 100;
+    }
+
     // Create the bill
     const bill = await addBill(
       businessId,
       billItems,
-      totalAmount,
+      discountedAmount,
       customerEmail,
       customerName,
       customerPhone,
@@ -909,6 +920,7 @@ export const generateBill = async (
     };
   }
 };
+
 
 export const getTopProduct = async (businessId: string) => {
   try {

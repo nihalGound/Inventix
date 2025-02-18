@@ -372,13 +372,13 @@ export const addBill = async (
     quantity: number;
     unitPrice: number;
     subtotal: number;
-    discount?: number;
   }[],
   totalAmount: number,
   customerEmail?: string,
   customerName?: string,
   customerPhone?: string,
-  notes?: string
+  notes?: string,
+  discount?: number
 ) => {
   return await client.bill.create({
     data: {
@@ -391,6 +391,7 @@ export const addBill = async (
       billItems: {
         create: items,
       },
+      discount,
     },
     include: {
       billItems: true,

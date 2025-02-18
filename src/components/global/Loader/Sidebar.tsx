@@ -1,44 +1,61 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Bell, ChevronDown, DollarSign, LayoutDashboard, Package, Settings, Star, User, Menu } from "lucide-react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import {
+  Bell,
+  ChevronDown,
+  DollarSign,
+  LayoutDashboard,
+  Package,
+  Settings,
+  Star,
+  User,
+  Menu,
+  FileText,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: Package, label: "Products", href: "/products" },
   { icon: DollarSign, label: "Sales", href: "/sales" },
+  { icon: FileText, label: "Create Bill", href: "/create-bill" },
   { icon: Bell, label: "Notifications", href: "/notifications" },
   { icon: Settings, label: "Settings", href: "/settings" },
-]
+];
 
 const businesses = [
   { id: "1", name: "Business A" },
   { id: "2", name: "Business B" },
   { id: "3", name: "Business C" },
-]
+];
 
 export function AppSidebar() {
-  const [selectedBusiness, setSelectedBusiness] = useState(businesses[0])
-  const pathname = usePathname()
-  const [isPremium, setIsPremium] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-  const [isOpen, setIsOpen] = useState(false)
+  const [selectedBusiness, setSelectedBusiness] = useState(businesses[0]);
+  const pathname = usePathname();
+  const [isPremium, setIsPremium] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-    checkIsMobile()
-    window.addEventListener("resize", checkIsMobile)
-    return () => window.removeEventListener("resize", checkIsMobile)
-  }, [])
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkIsMobile();
+    window.addEventListener("resize", checkIsMobile);
+    return () => window.removeEventListener("resize", checkIsMobile);
+  }, []);
 
   const SidebarContent = () => (
     <>
@@ -53,7 +70,10 @@ export function AppSidebar() {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56">
             {businesses.map((business) => (
-              <DropdownMenuItem key={business.id} onClick={() => setSelectedBusiness(business)}>
+              <DropdownMenuItem
+                key={business.id}
+                onClick={() => setSelectedBusiness(business)}
+              >
                 {business.name}
               </DropdownMenuItem>
             ))}
@@ -63,8 +83,15 @@ export function AppSidebar() {
       <ScrollArea className="flex-1">
         <nav className="space-y-1 p-4">
           {sidebarItems.map((item) => (
-            <Link key={item.href} href={item.href} onClick={() => setIsOpen(false)}>
-              <Button variant={pathname === item.href ? "secondary" : "ghost"} className="w-full justify-start">
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setIsOpen(false)}
+            >
+              <Button
+                variant={pathname === item.href ? "secondary" : "ghost"}
+                className="w-full justify-start"
+              >
                 <item.icon className="mr-2 h-4 w-4" />
                 {item.label}
               </Button>
@@ -84,7 +111,9 @@ export function AppSidebar() {
               <Star className="mr-2 h-4 w-4 text-yellow-400" />
               Upgrade to Premium
             </h3>
-            <p className="text-sm mt-2">Get access to advanced features and priority support.</p>
+            <p className="text-sm mt-2">
+              Get access to advanced features and priority support.
+            </p>
             <Button className="mt-2 w-full" onClick={() => setIsPremium(true)}>
               Upgrade Now
             </Button>
@@ -92,7 +121,7 @@ export function AppSidebar() {
         )}
       </div>
     </>
-  )
+  );
 
   if (isMobile) {
     return (
@@ -106,13 +135,12 @@ export function AppSidebar() {
           <SidebarContent />
         </SheetContent>
       </Sheet>
-    )
+    );
   }
 
   return (
     <aside className="w-64 bg-background border-r flex flex-col h-screen">
       <SidebarContent />
     </aside>
-  )
+  );
 }
-

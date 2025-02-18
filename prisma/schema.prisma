@@ -85,6 +85,7 @@ model Bill {
   notes         String?
   createdAt     DateTime     @default(now()) @map("created_at")
   paidAt        DateTime?    @map("paid_at")
+  discount      Float        @default(0)
 
   @@index([businessId])
   @@index([status])
@@ -100,7 +101,6 @@ model BillItem {
   product   Product @relation(fields: [productId], references: [id])
   quantity  Int
   unitPrice Float   @map("unit_price")
-  discount  Float   @default(0)
   subtotal  Float
 
   @@index([billId])
