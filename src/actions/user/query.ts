@@ -6,7 +6,7 @@ export const findUser = async (clerkId: string) => {
       clerkId: clerkId,
     },
     include: {
-      businesses: {
+      business: {
         select: {
           name: true,
           id: true,
@@ -22,9 +22,14 @@ export const createUser = async (clerkId: string, email: string) => {
     data: {
       clerkId: clerkId,
       email: email,
+      business: {
+        create: {
+          name: email,
+        },
+      },
     },
     include: {
-      businesses: {
+      business: {
         select: {
           name: true,
           id: true,

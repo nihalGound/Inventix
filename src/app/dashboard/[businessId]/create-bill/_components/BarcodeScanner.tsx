@@ -11,13 +11,52 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import BarcodeScannerComponent from "react-qr-barcode-scanner";
 import { Product, useBillStore } from "@/store/bill";
+import { useGetBarcodeDetail } from "@/utils/queries";
+import { toast } from "sonner";
 
-export function BarcodeScanner() {
+export function BarcodeScanner({ businessId }: { businessId: string }) {
   const { isScannerOpen, addProduct, setIsScannerOpen } = useBillStore(
     (state) => state
   );
   const [scanning, setScanning] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [scanValue, setScanValue] = useState<string>("");
+
+  const { data, isLoading } = useGetBarcodeDetail(businessId, scanValue, {
+    enabled: !!scanValue,
+  });
+
+  const { data: productData, status } = data as {
+    status: number;
+    data: {
+      businessId: string;
+      barcode: string;
+      name: string;
+      id: string;
+      createdAt: Date;
+      updatedAt: Date;
+      image: string | null;
+      price: number;
+      stock: number;
+      lowStockThreshold: number;
+    };
+  };
+
+  useEffect(() => {
+    if (status === 200 && productData) {
+      const product: Product = {
+        id: productData.id,
+        name: productData.name,
+        price: productData.price,
+        quantity: 1,
+      };
+      addProduct(product);
+      toast.success("Product added successfully!");
+      setScanValue("");
+    } else if (scanValue) {
+      toast.error("Product not found. Please scan a valid barcode.");
+      setScanValue("");
+    }
+  }, [productData, scanValue, status, addProduct]);
 
   useEffect(() => {
     if (isScannerOpen) {
@@ -26,28 +65,6 @@ export function BarcodeScanner() {
       setScanning(false);
     }
   }, [isScannerOpen]);
-
-  const handleScan = async (result: string | null) => {
-    if (result) {
-      setLoading(true);
-      try {
-        // Simulating API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        //support this product foudn after api call for product details;
-        const product: Product = {
-          id: result,
-          name: "Temporary Product",
-          price: 10,
-          quantity: 1,
-        };
-        addProduct(product);
-      } catch (error) {
-        console.error("Error processing barcode:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
 
   const handleError = (error: string | DOMException) => {
     console.error("QR Scanner Error:", error);
@@ -60,16 +77,16 @@ export function BarcodeScanner() {
           <DialogTitle>Scan Barcode</DialogTitle>
         </DialogHeader>
         <div className="mt-4">
-          {scanning && !loading && (
+          {scanning && !isLoading && (
             <BarcodeScannerComponent
-              onUpdate={(_, result) => result && handleScan(result.getText())}
+              onUpdate={(_, result) => result && setScanValue(result.getText())}
               onError={handleError}
               facingMode="environment"
               width={"100%"}
               height={"100%"}
             />
           )}
-          {loading && (
+          {isLoading && (
             <div className="text-center">
               <Loader2 className="h-8 w-8 animate-spin mx-auto" />
               <p className="mt-2">Processing barcode...</p>

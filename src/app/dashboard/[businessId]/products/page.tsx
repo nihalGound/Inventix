@@ -24,48 +24,27 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import Image from "next/image";
 import { downloadBarcode } from "@/lib/utils";
+import { useGetAllProducts } from "@/utils/queries";
 
-interface Product {
-  id: string;
-  name: string;
-  barcode: string;
-  stock: number;
-  price: number;
-  lowThreshold: number;
-  image: string;
-}
+function Products({ params }: { params: { businessId: string } }) {
+  const { data, isFetching } = useGetAllProducts(params.businessId);
+  const { data: allProducts, status } = data as {
+    status: number;
+    data: {
+      name: string;
+      id: string;
+      createdAt: Date;
+      updatedAt: Date;
+      image: string | null;
+      price: number;
+      stock: number;
+      lowStockThreshold: number;
+      businessId: string;
+      barcode: string;
+    }[];
+  };
 
-function Products() {
-  const allProducts: Product[] = [
-    {
-      id: "11eerrse11",
-      name: "compression Tshirt",
-      barcode: "A124Milk",
-      stock: 100,
-      lowThreshold: 20,
-      price: 30,
-      image: "/hello.png",
-    },
-    {
-      id: "11eerrse12",
-      name: "Bread",
-      barcode: "A124Milk",
-      stock: 200,
-      lowThreshold: 20,
-      price: 50,
-      image: "/hello.png",
-    },
-    {
-      id: "11eerrse13",
-      name: "Cheese",
-      barcode: "A124Milk",
-      stock: 10,
-      lowThreshold: 20,
-      price: 10,
-      image: "/hello.png",
-    },
-  ];
-  const [products, setProducts] = useState<Product[]>(allProducts);
+  const [products, setProducts] = useState(allProducts);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [noResults, setNoResults] = useState(false);
@@ -93,13 +72,23 @@ function Products() {
     const filteredSales = allProducts.filter(
       (product) =>
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.barcode.toLowerCase().includes(searchQuery.toLowerCase())
+        (product.id + "_" + product.name)
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase())
     );
 
     setProducts(filteredSales);
     setNoResults(filteredSales.length === 0);
     setIsLoading(false);
   };
+
+  if (!isFetching && status !== 200) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        An error occurred while fetching data.
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="flex justify-between items-center mb-6">
@@ -142,7 +131,7 @@ function Products() {
         </div>
       </div>
       <Card className="border rounded-lg overflow-hidden">
-        {isLoading ? (
+        {isLoading || isFetching ? (
           <div className="p-4">
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
@@ -169,8 +158,7 @@ function Products() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Image</TableHead>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Barcode</TableHead>
+                  <TableHead>Name</TableHead>
                   <TableHead>Stock</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Status</TableHead>
@@ -196,25 +184,24 @@ function Products() {
                       </Dialog>
                     </TableCell>
                     <TableCell>{product.name}</TableCell>
-                    <TableCell>{product.barcode}</TableCell>
                     <TableCell>{product.stock}</TableCell>
                     <TableCell>{product.price}</TableCell>
                     <TableCell>
                       <div
                         className={`${
-                          product.stock <= product.lowThreshold
+                          product.stock <= product.lowStockThreshold
                             ? "bg-red-500/50"
                             : "bg-green-500/50"
                         } flex rounded-full px-2 py-1 text-centerk w-fit max-md:text-center max-md:bg-transparent`}
                       >
                         <span
                           className={`${
-                            product.stock <= product.lowThreshold
+                            product.stock <= product.lowStockThreshold
                               ? "text-red-500"
                               : "text-green-500"
                           } max-md:text-xs`}
                         >
-                          {product.stock <= product.lowThreshold
+                          {product.stock <= product.lowStockThreshold
                             ? "Out of stock"
                             : "In stock"}
                         </span>
@@ -224,7 +211,7 @@ function Products() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => downloadBarcode(product.id)}
+                        onClick={() => downloadBarcode(product.barcode)}
                       >
                         <Download className="mr-2 h-4 w-4" />
                         Barcode

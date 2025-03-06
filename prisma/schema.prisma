@@ -8,13 +8,13 @@ datasource db {
 }
 
 model User {
-  id         String     @id @default(uuid())
-  clerkId    String     @unique @map("clerk_id")
-  email      String     @unique
-  businesses Business[]
-  premium    Boolean    @default(false)
-  createdAt  DateTime   @default(now()) @map("created_at")
-  updatedAt  DateTime   @updatedAt @map("updated_at")
+  id        String     @id @default(uuid())
+  clerkId   String     @unique @map("clerk_id")
+  email     String     @unique
+  business  Business[]
+  premium   Boolean    @default(false)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
 
   @@index([clerkId])
   @@map("users")
@@ -50,6 +50,7 @@ model Product {
   createdAt         DateTime   @default(now()) @map("created_at")
   updatedAt         DateTime   @updatedAt @map("updated_at")
   image             String?
+  barcode           String
 
   @@index([businessId])
   @@map("products")
@@ -72,23 +73,19 @@ model Sale {
 }
 
 model Bill {
-  id            String       @id @default(uuid())
-  businessId    String       @map("business_id")
-  business      Business     @relation(fields: [businessId], references: [id])
+  id            String     @id @default(uuid())
+  businessId    String     @map("business_id")
+  business      Business   @relation(fields: [businessId], references: [id])
   billItems     BillItem[]
-  totalAmount   Float        @map("total_amount")
-  status        BillStatus   @default(PENDING)
-  paymentMode   PaymentMode?
-  customerName  String?      @map("customer_name")
-  customerPhone String?      @map("customer_phone")
-  customerEmail String?      @map("customer_email")
+  totalAmount   Float      @map("total_amount")
+  customerName  String?    @map("customer_name")
+  customerPhone String?    @map("customer_phone")
+  customerEmail String?    @map("customer_email")
   notes         String?
-  createdAt     DateTime     @default(now()) @map("created_at")
-  paidAt        DateTime?    @map("paid_at")
-  discount      Float        @default(0)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  discount      Float      @default(0)
 
   @@index([businessId])
-  @@index([status])
   @@index([createdAt])
   @@map("bills")
 }
@@ -148,3 +145,5 @@ enum PaymentMode {
   UPI
   BANK_TRANSFER
 }
+
+

@@ -21,12 +21,14 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import React from "react";
-import debounce from "lodash.debounce";
 import { Product, useBillStore } from "@/store/bill";
 import { X } from "lucide-react";
 import { DownloadableInvoice } from "./PrintableInvoice";
+import { useSearch } from "@/hooks/useSearch";
+import { cn } from "@/lib/utils";
+import { useSaveBill } from "@/hooks/useSaveBill";
 
-export function BillInterface() {
+export function BillInterface({ businessId }: { businessId: string }) {
   const {
     addProduct,
     setCustomerEmail,
@@ -44,13 +46,31 @@ export function BillInterface() {
     total,
   } = useBillStore((state) => state);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
   const handleQuantityChange = (id: string, quantity: number) => {
     updateProductQuantity(id, quantity);
   };
+
+  const {
+    isFetching,
+    onSearchQuery,
+    products: result,
+    query,
+  } = useSearch(businessId);
+
+  const { billId, isPending, mutate } = useSaveBill(
+    businessId,
+    products.map((p) => {
+      return {
+        productId: p.id,
+        quantity: p.quantity,
+      };
+    }),
+    customerEmail,
+    customerName,
+    customerPhone,
+    "",
+    discount
+  );
 
   // const handlePrint = () => {
   //   const printWindow = window.open("", "_blank");
@@ -83,36 +103,18 @@ export function BillInterface() {
   // };
 
   const handleSaveBill = async () => {
-    const billData = {
-      customerName,
-      customerEmail,
-      customerPhone,
-      products,
-      discount,
-      total,
-    };
-    console.log("Saving bill:", billData);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    alert("Bill saved successfully!");
-  };
-
-  const debouncedSearch = debounce(async (term: string) => {
-    setIsLoading(true);
-    // Simulate API call with ${term}
-    // console.log(term);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const results = [
-      { id: "1", name: `Product 1`, price: 10, quantity: 1 },
-      { id: "2", name: `Product 2`, price: 20, quantity: 1 },
-      { id: "3", name: `Product 3`, price: 30, quantity: 1 },
-    ];
-    setSearchResults(results);
-    setIsLoading(false);
-  }, 300);
-
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
-    debouncedSearch(term);
+    mutate();
+    // const billData = {
+    //   customerName,
+    //   customerEmail,
+    //   customerPhone,
+    //   products,
+    //   discount,
+    //   total,
+    // };
+    // console.log("Saving bill:", billData);
+    // await new Promise((resolve) => setTimeout(resolve, 1500));
+    // alert("Bill saved successfully!");
   };
 
   const handleAddProduct = (product: Product) => {
@@ -233,16 +235,20 @@ export function BillInterface() {
         </CardContent>
       </Card>
       <div className="flex justify-end space-x-4">
-        <DownloadableInvoice
-          customerEmail={customerEmail}
-          customerName={customerName}
-          customerPhone={customerPhone}
-          discount={discount}
-          products={products}
-          total={total}
-          businessName="Business A"
-        />
-        <Button onClick={handleSaveBill}>Save Bill</Button>
+        {billId && (
+          <DownloadableInvoice
+            customerEmail={customerEmail}
+            customerName={customerName}
+            customerPhone={customerPhone}
+            discount={discount}
+            products={products}
+            total={total}
+            businessName="Business A"
+          />
+        )}
+        <Button onClick={handleSaveBill} disabled={isPending}>
+          Save Bill
+        </Button>
       </div>
 
       <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
@@ -252,25 +258,49 @@ export function BillInterface() {
           </DialogHeader>
           <Input
             placeholder="Search products..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
+            value={query}
+            onChange={(e) => onSearchQuery(e)}
           />
-          {isLoading ? (
+          {isFetching ? (
             <div className="space-y-2">
               <Skeleton className="h-12 w-full" />
               <Skeleton className="h-12 w-full" />
               <Skeleton className="h-12 w-full" />
             </div>
+          ) : products.length === 0 ? (
+            <p>No product found</p>
           ) : (
             <div className="mt-4">
-              {searchResults.map((product) => (
+              {result.map((product) => (
                 <div
                   key={product.id}
                   className="flex justify-between items-center p-2 hover:bg-gray-100/10 cursor-pointer"
-                  onClick={() => handleAddProduct(product)}
+                  onClick={() => {
+                    if (product.stock) {
+                      handleAddProduct({
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        quantity: 1,
+                      });
+                    } else {
+                      return;
+                    }
+                  }}
                 >
                   <span>{product.name}</span>
                   <span>${product.price.toFixed(2)}</span>
+                  <span>{product.stock}</span>
+                  <span
+                    className={cn(
+                      product.stock <= product.lowStockThreshold
+                        ? "bg-red-400"
+                        : "bg-green-400",
+                      "h-full w-full rounded-full"
+                    )}
+                  >
+                    {product.stock <= product.lowStockThreshold ? "Low" : "In"}
+                  </span>
                 </div>
               ))}
             </div>

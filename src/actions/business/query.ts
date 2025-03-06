@@ -15,6 +15,23 @@ export const createBusiness = async (
   });
 };
 
+export const getBusinesses = async (clerkId: string) => {
+  return await client.user.findUnique({
+    where: {
+      clerkId: clerkId,
+    },
+    include: {
+      business: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+        },
+      },
+    },
+  });
+};
+
 export const getBusiness = async (businessId: string, clerkId: string) => {
   return await client.business.findFirst({
     where: {
@@ -30,6 +47,7 @@ export const createProduct = async (
   stock: number,
   lowStockThreshold: number,
   businessId: string,
+  barcode: string,
   image?: string
 ) => {
   return await client.product.create({
@@ -39,7 +57,16 @@ export const createProduct = async (
       price,
       stock,
       businessId,
+      barcode,
       image: image || "",
+    },
+  });
+};
+
+export const getProducts = async (businessId: string) => {
+  return await client.product.findMany({
+    where: {
+      businessId: businessId,
     },
   });
 };
@@ -53,6 +80,34 @@ export const getProduct = async (productId: string, businessId: string) => {
   });
 };
 
+export const productByBarcode = async (barcode: string, businessId: string) => {
+  return await client.product.findFirst({
+    where: {
+      businessId,
+      barcode,
+    },
+  });
+};
+
+export const findProducts = async (value: string, businessId: string) => {
+  return await client.product.findMany({
+    where: {
+      businessId: businessId,
+      OR: [
+        {
+          name: {
+            contains: value,
+          },
+        },
+        {
+          barcode: {
+            contains: value,
+          },
+        },
+      ],
+    },
+  });
+};
 export const updateProduct = async (
   productId: string,
   args: {
@@ -93,14 +148,7 @@ interface TopProduct {
   revenue: number;
 }
 
-interface MonthlyTopProducts {
-  month: string;
-  products: TopProduct[];
-}
-
-export async function getTopProductsByMonth(
-  businessId: string
-): Promise<MonthlyTopProducts[]> {
+export const getTopProductsByMonth = async (businessId: string) => {
   // Get start date (6 months ago from current date)
   const startDate = startOfMonth(subMonths(new Date(), 5));
 
@@ -179,9 +227,9 @@ export async function getTopProductsByMonth(
   return result.sort(
     (a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month)
   );
-}
+};
 
-export async function getLowStockProduct(businessId: string) {
+export const getLowStockProduct = async (businessId: string) => {
   return await client.product.findMany({
     where: {
       businessId: businessId,
@@ -194,7 +242,7 @@ export async function getLowStockProduct(businessId: string) {
     },
     take: 5,
   });
-}
+};
 
 export const fetchAnalyticsData = async (businessId: string) => {
   // Fetch the sales data for the given business
@@ -214,9 +262,9 @@ export const fetchAnalyticsData = async (businessId: string) => {
     },
   });
 
-  const topProductByMonth = getTopProductsByMonth(businessId);
+  const topProductByMonth = await getTopProductsByMonth(businessId);
 
-  const lowStock = getLowStockProduct(businessId);
+  const lowStock = await getLowStockProduct(businessId);
 
   return {
     totalSales: totalSales._sum.totalPrice || 0,
@@ -239,19 +287,49 @@ const getStartDate = (period: string): Date => {
   }
 };
 
-export const fetchSalesReport = async (businessId: string, period: string) => {
-  // Determine the date range for the specified period
+export const fetchPeriodSalesData = async (
+  businessId: string,
+  period: string
+) => {
   const startDate = getStartDate(period);
   const endDate = new Date(); // Current date
 
   // Fetch the sales data for the given period
-  const salesData = await client.sale.findMany({
+  return await client.sale.findMany({
     where: {
       businessId: businessId,
       soldAt: {
         gte: startDate,
         lte: endDate,
       },
+    },
+  });
+};
+
+export const fetchSalesDataForDate = async (
+  businessId: string,
+  start: string,
+  end: string
+) => {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  return await client.sale.findMany({
+    where: {
+      businessId: businessId,
+      soldAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+  });
+};
+
+export const fetchSalesReport = async (businessId: string) => {
+  // Determine the date range for the specified period
+  // Fetch the sales data for the given period
+  const salesData = await client.sale.findMany({
+    where: {
+      businessId: businessId,
     },
   });
 
@@ -259,22 +337,14 @@ export const fetchSalesReport = async (businessId: string, period: string) => {
   const totalOrders = await client.sale.count({
     where: {
       businessId: businessId,
-      soldAt: {
-        gte: startDate,
-        lte: endDate,
-      },
     },
   });
 
   // Fetch top products by quantity sold
-  const topProductByQuantity = await client.sale.groupBy({
+  const productByQuant = await client.sale.groupBy({
     by: ["productId"],
     where: {
       businessId: businessId,
-      soldAt: {
-        gte: startDate,
-        lte: endDate,
-      },
     },
     _sum: {
       quantity: true,
@@ -287,15 +357,35 @@ export const fetchSalesReport = async (businessId: string, period: string) => {
     take: 3, // Get the top 3 products
   });
 
-  // Fetch top products by revenue generated
-  const topProductByRevenue = await client.sale.groupBy({
+  const productId1 = productByQuant.map((p) => p.productId);
+
+  const productDetailsByQuantity = await client.product.findMany({
+    where: {
+      id: { in: productId1 },
+    },
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
+  // Combine the data
+  const topProductByQuantity = productByQuant.map((item) => {
+    const productDetail = productDetailsByQuantity.find(
+      (product) => product.id === item.productId
+    );
+    return {
+      productId: item.productId,
+      name: productDetail?.name || "Unknown",
+      quantity: item._sum.quantity || 0,
+    };
+  });
+
+  // Step 2: Fetch top products by revenue
+  const productByReven = await client.sale.groupBy({
     by: ["productId"],
     where: {
       businessId: businessId,
-      soldAt: {
-        gte: startDate,
-        lte: endDate,
-      },
     },
     _sum: {
       totalPrice: true,
@@ -306,6 +396,30 @@ export const fetchSalesReport = async (businessId: string, period: string) => {
       },
     },
     take: 3, // Get the top 3 products
+  });
+
+  const productId2 = productByReven.map((p) => p.productId);
+
+  const productDetailsByRevenue = await client.product.findMany({
+    where: {
+      id: { in: productId2 },
+    },
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
+  // Combine the data
+  const topProductByRevenue = productByReven.map((item) => {
+    const productDetail = productDetailsByRevenue.find(
+      (product) => product.id === item.productId
+    );
+    return {
+      productId: item.productId,
+      name: productDetail?.name || "Unknown",
+      revenue: item._sum.totalPrice || 0,
+    };
   });
 
   // Summarize the sales data (e.g., total sales, average sales, etc.)
@@ -362,6 +476,14 @@ export const getNotifications = async (businesssId: string) => {
     orderBy: {
       createdAt: "desc",
     },
+    select: {
+      createdAt: true,
+      id: true,
+      readAt: true,
+      status: true,
+      type: true,
+      message: true,
+    },
   });
 };
 
@@ -393,8 +515,14 @@ export const addBill = async (
       },
       discount,
     },
-    include: {
-      billItems: true,
+  });
+};
+
+export const getBill = async (billId: string, businessId: string) => {
+  return await client.bill.findFirst({
+    where: {
+      id: billId,
+      businessId: businessId,
     },
   });
 };

@@ -3,17 +3,6 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { createUser, findUser, upgradePlan } from "./query";
 
-type ApiResponse<T> = {
-  status: number;
-  data: T | string;
-};
-
-type Business = {
-  name: string;
-  id: string;
-  image: string | null;
-};
-
 export const onCurrentUser = async () => {
   try {
     const user = await currentUser();
@@ -27,9 +16,7 @@ export const onCurrentUser = async () => {
   }
 };
 
-export const onBoardUser = async (): Promise<
-  ApiResponse<Business[] | string>
-> => {
+export const userProfile = async () => {
   try {
     const user = await onCurrentUser();
     if (!user) {
@@ -41,7 +28,35 @@ export const onBoardUser = async (): Promise<
     if (existingUser) {
       return {
         status: 200,
-        data: existingUser.businesses,
+        data: existingUser,
+      };
+    }
+    return {
+      status: 400,
+      data: null,
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      status: 500,
+      data: null,
+    };
+  }
+};
+
+export const onBoardUser = async () => {
+  try {
+    const user = await onCurrentUser();
+    if (!user) {
+      return { status: 401 };
+    }
+
+    // Check if user exists in database
+    const existingUser = await findUser(user?.id as string);
+    if (existingUser) {
+      return {
+        status: 200,
+        data: existingUser,
       };
     }
 
@@ -53,18 +68,16 @@ export const onBoardUser = async (): Promise<
     if (newUser) {
       return {
         status: 201,
-        data: newUser.businesses,
+        data: existingUser,
       };
     }
     return {
       status: 500,
-      data: "Error: something went wrong while creating user",
     };
   } catch (error) {
     console.log(error);
     return {
       status: 500,
-      data: "Error: something went wrong",
     };
   }
 };

@@ -23,11 +23,12 @@ import {
   FileText,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useGetAllBusiness } from "@/utils/queries";
 
 const sidebarItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+  { icon: LayoutDashboard, label: "Dashboard", href: "/" },
   { icon: Package, label: "Products", href: "/products" },
   { icon: DollarSign, label: "Sales", href: "/sales" },
   { icon: FileText, label: "Create Bill", href: "/create-bill" },
@@ -35,16 +36,35 @@ const sidebarItems = [
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
-const businesses = [
-  { id: "1", name: "Business A" },
-  { id: "2", name: "Business B" },
-  { id: "3", name: "Business C" },
-];
+export function AppSidebar({ businessId }: { businessId: string }) {
+  const router = useRouter();
 
-export function AppSidebar() {
-  const [selectedBusiness, setSelectedBusiness] = useState(businesses[0]);
+  const { data } = useGetAllBusiness();
+  const { data: user } = data as {
+    status: number;
+    data: {
+      business: {
+        id: string;
+        name: string;
+        image: string | null;
+      }[];
+    } & {
+      id: string;
+      clerkId: string;
+      email: string;
+      premium: boolean;
+      createdAt: Date;
+      updatedAt: Date;
+    };
+  };
+  const businesses = user?.business;
+  const currentBusiness = businesses.find((b) => b.id === businessId);
+  const [selectedBusiness, setSelectedBusiness] = useState<{
+    id: string;
+    image: string | null;
+    name: string;
+  }>(currentBusiness!);
   const pathname = usePathname();
-  const [isPremium, setIsPremium] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -72,7 +92,10 @@ export function AppSidebar() {
             {businesses.map((business) => (
               <DropdownMenuItem
                 key={business.id}
-                onClick={() => setSelectedBusiness(business)}
+                onClick={() => {
+                  router.push(`/${business.id}`);
+                  setSelectedBusiness(business);
+                }}
               >
                 {business.name}
               </DropdownMenuItem>
@@ -105,7 +128,7 @@ export function AppSidebar() {
           <User className="mr-2 h-4 w-4" />
           Profile
         </Button>
-        {!isPremium && (
+        {!user.premium && (
           <div className="mt-4 p-4 bg-primary/10 rounded-lg">
             <h3 className="font-semibold flex items-center">
               <Star className="mr-2 h-4 w-4 text-yellow-400" />
@@ -114,7 +137,10 @@ export function AppSidebar() {
             <p className="text-sm mt-2">
               Get access to advanced features and priority support.
             </p>
-            <Button className="mt-2 w-full" onClick={() => setIsPremium(true)}>
+            <Button
+              className="mt-2 w-full"
+              onClick={() => console.log("feature not added")}
+            >
               Upgrade Now
             </Button>
           </div>
