@@ -1,3 +1,4 @@
+"use client"
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBusinessAnalytics } from "@/utils/queries";
 import { useParams, useRouter } from "next/navigation";
@@ -67,6 +68,7 @@ function StatsCard({ type }: Props) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
+            {type === "sales" && "$ "}
               {type === "inventory"
                 ? analytics.totalProducts
                 : type === "alerts"

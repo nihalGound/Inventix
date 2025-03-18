@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,17 +9,18 @@ import { useSalesDataPeriod } from "@/utils/queries";
 
 export default function ReportsPage({ businessId }: { businessId: string }) {
   const [startDate, setStartDate] = useState(
-    new Date(new Date().setDate(new Date().getDate() - 7)).toLocaleString()
+    new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days ago
   );
-  const [endDate, setEndDate] = useState(new Date().toLocaleString());
+  const [endDate, setEndDate] = useState(new Date().toISOString());
 
   const { data, isFetching } = useSalesDataPeriod(
     businessId,
     startDate,
     endDate
   );
-  const { data: stats } = data as {
-    data: {
+
+  const stats = useMemo(() => {
+    return (data?.data ?? []) as {
       businessId: string;
       id: string;
       productId: string;
@@ -27,32 +28,33 @@ export default function ReportsPage({ businessId }: { businessId: string }) {
       totalPrice: number;
       soldAt: Date;
     }[];
-  };
+  }, [data]);
 
-  const groupedData = stats.reduce((acc, curr) => {
-    const dateKey = new Date(curr.soldAt).toISOString().split("T")[0]; // Format date as YYYY-MM-DD
-    if (!acc[dateKey]) {
-      acc[dateKey] = { date: dateKey, totalSales: 0, totalOrders: 0 };
-    }
-    acc[dateKey].totalSales += curr.totalPrice;
-    acc[dateKey].totalOrders += curr.quantity;
-    return acc;
-  }, {} as Record<string, { date: string; totalSales: number; totalOrders: number }>);
+  const groupedData = useMemo(() => {
+    return stats.reduce((acc, curr) => {
+      const dateKey = new Date(curr.soldAt).toISOString().split("T")[0]; // Format date as YYYY-MM-DD
+      if (!acc[dateKey]) {
+        acc[dateKey] = { date: dateKey, totalSales: 0, totalOrders: 0 };
+      }
+      acc[dateKey].totalSales += curr.totalPrice;
+      acc[dateKey].totalOrders += curr.quantity;
+      return acc;
+    }, {} as Record<string, { date: string; totalSales: number; totalOrders: number }>);
+  }, [stats]);
 
-  // Convert the grouped data into an array
-  const sampleData = Object.values(groupedData);
+  // Convert the grouped data into an array and sort by date
+  const sampleData = useMemo(() => {
+    return Object.values(groupedData).sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+  }, [groupedData]);
 
-  // Sort the array by date
-  sampleData.sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
-
-  const revenue = stats.reduce(
-    (prevValue, currValue) => prevValue + currValue.totalPrice,
-    0
+  const revenue = useMemo(
+    () => stats.reduce((total, curr) => total + curr.totalPrice, 0),
+    [stats]
   );
   const orders = stats.length;
-  const averageOrderValue = revenue / orders;
+  const averageOrderValue = orders > 0 ? revenue / orders : 0;
 
   return (
     <div className="min-h-screen bg-background p-6">

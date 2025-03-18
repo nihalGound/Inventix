@@ -23,6 +23,7 @@ export interface BillStore {
   setCustomerPhone: (phone: string) => void;
   setDiscount: (discount: number) => void;
   setIsScannerOpen: (val: boolean) => void;
+  resetStore: () => void;
 }
 
 export const useBillStore = create<BillStore>((set) => ({
@@ -108,4 +109,16 @@ export const useBillStore = create<BillStore>((set) => ({
     set(() => ({
       isScannerOpen: val,
     })),
+  resetStore: () => {
+    set(() => {
+      return {
+        discount: 0,
+        total: 0,
+        customerEmail: "",
+        customerName: "",
+        customerPhone: "",
+        products: [],
+      };
+    });
+  },
 }));

@@ -46,6 +46,7 @@ export const userProfile = async () => {
 
 export const onBoardUser = async () => {
   try {
+    console.log("entered")
     const user = await onCurrentUser();
     if (!user) {
       return { status: 401 };

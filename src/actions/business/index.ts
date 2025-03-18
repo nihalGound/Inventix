@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { findUser } from "../user/query";
 import {
   addBill,
+  addSale,
   createBusiness,
   createNotification,
   createProduct,
@@ -101,15 +102,14 @@ export const getAllBusiness = async () => {
   try {
     const user = await onCurrentUser();
     if (!user) {
-      return { status: 401, data: "User not authenticated" };
+      return { status: 401, data: [] };
     }
-
     // Ensure the user exists in the database
     const existingUser = await findUser(user.id);
     if (!existingUser) {
       return {
         status: 404,
-        data: "User not found in the database",
+        data: [],
       };
     }
     const business = await getBusinesses(existingUser.clerkId);
@@ -649,29 +649,30 @@ export const getSalesDataTime = async (
     // Fetch the current user
     const user = await onCurrentUser();
     if (!user) {
-      return { status: 401, data: "User not authenticated" };
+      return { status: 401, data: [] };
     }
 
     // Ensure the user exists in the database
     const existingUser = await findUser(user.id);
     if (!existingUser) {
-      return { status: 404, data: "User not found in the database" };
+      return { status: 404, data: [] };
     }
 
     // Ensure the business belongs to the current user
     const business = await getBusiness(businessId, user.id);
     if (!business) {
-      return { status: 404, data: "Business not found for the current user" };
+      return { status: 404, data: [] };
     }
 
     const data = await fetchSalesDataForDate(businessId, start, end);
+    console.log("dat fetched server side : ",start,end,data)
     return {
       status: 200,
       data,
     };
   } catch (error) {
     console.error("Error generating sales report:", error);
-    return { status: 500, data: "Error generating sales report" };
+    return { status: 500, data: [] };
   }
 };
 
@@ -834,14 +835,23 @@ export const getAllNotification = async (businessId: string) => {
     if (!businessId) {
       return {
         status: 400,
-        data: "Invalid input data. Please check the notification details.",
+        data: {
+          message: "Invalid input data. Please check the notification details.",
+          notifications: [],
+        },
       };
     }
 
     // Fetch the current user
     const user = await onCurrentUser();
     if (!user) {
-      return { status: 401, data: "User not authenticated" };
+      return {
+        status: 401,
+        data: {
+          message: "User not authenticated",
+          notifications: [],
+        },
+      };
     }
 
     // Ensure the user exists in the database
@@ -849,7 +859,10 @@ export const getAllNotification = async (businessId: string) => {
     if (!existingUser) {
       return {
         status: 404,
-        data: "User not found in the database",
+        data: {
+          message: "User not foudn in database",
+          notifications: [],
+        },
       };
     }
 
@@ -858,7 +871,10 @@ export const getAllNotification = async (businessId: string) => {
     if (!business) {
       return {
         status: 404,
-        data: "Business not found for the current user",
+        data: {
+          message: "Business  not found for current user",
+          notifications: [],
+        },
       };
     }
 
@@ -875,14 +891,20 @@ export const getAllNotification = async (businessId: string) => {
     } else {
       return {
         status: 404,
-        data: "No notifications found for this business.",
+        data: {
+          message: "No notification for current business",
+          notifications: [],
+        },
       };
     }
   } catch (error) {
     console.error("Error fetching notifications:", error);
     return {
       status: 500,
-      data: "Something went wrong while fetching notifications.",
+      data: {
+        message: "Something went wrong",
+        notifications: [],
+      },
     };
   }
 };
@@ -980,6 +1002,8 @@ export const generateBill = async (
             stock: product.stock - item.quantity,
           });
 
+          await addSale(item.productId, businessId, item.quantity, subtotal);
+
           // Send low stock notification if necessary
           if (product.stock - item.quantity <= product.lowStockThreshold) {
             // Send notification for stock alert
@@ -1033,7 +1057,10 @@ export const generateBill = async (
       status: 201,
       data: {
         message: "Bill generated successfully.",
-        bill: bill.id,
+        bill: {
+          billId: bill.id,
+          date: bill.createdAt,
+        },
       },
     };
   } catch (error) {
@@ -1119,19 +1146,19 @@ export const getAllProducts = async (businessId: string) => {
     // Fetch the current user
     const user = await onCurrentUser();
     if (!user) {
-      return { status: 401, data: "User not authenticated" };
+      return { status: 401, data: [] };
     }
 
     // Ensure the user exists in the database
     const existingUser = await findUser(user.id);
     if (!existingUser) {
-      return { status: 404, data: "User not found in the database" };
+      return { status: 404, data: [] };
     }
 
     // Ensure the business belongs to the current user
     const business = await getBusiness(businessId, user.id);
     if (!business) {
-      return { status: 404, data: "Business not found for the current user" };
+      return { status: 404, data: [] };
     }
 
     const products = await getProducts(businessId);
@@ -1143,13 +1170,13 @@ export const getAllProducts = async (businessId: string) => {
     }
     return {
       status: 400,
-      data: null,
+      data: [],
     };
   } catch (error) {
     console.log(error);
     return {
       status: 500,
-      data: null,
+      data: [],
     };
   }
 };
@@ -1202,19 +1229,19 @@ export const getProductbyBarcode = async (
     // Fetch the current user
     const user = await onCurrentUser();
     if (!user) {
-      return { status: 401, data: "User not authenticated" };
+      return { status: 401, data: {} };
     }
 
     // Ensure the user exists in the database
     const existingUser = await findUser(user.id);
     if (!existingUser) {
-      return { status: 404, data: "User not found in the database" };
+      return { status: 404, data: {} };
     }
 
     // Ensure the business belongs to the current user
     const business = await getBusiness(businessId, user.id);
     if (!business) {
-      return { status: 404, data: "Business not found for the current user" };
+      return { status: 404, data: {} };
     }
 
     const product = await productByBarcode(barcode, businessId);
@@ -1227,7 +1254,7 @@ export const getProductbyBarcode = async (
 
     return {
       status: 400,
-      data: "Product not found",
+      data: {},
     };
   } catch (error) {
     console.log(error);

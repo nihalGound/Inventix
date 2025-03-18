@@ -8,23 +8,33 @@ import {
   QueryClient,
 } from "@tanstack/react-query";
 import { queryKeys } from "@/utils/queryKeys";
-import { getBusinessAnalytics, getTopProduct } from "@/actions/business";
+import {
+  getAllProducts,
+  getBusinessAnalytics,
+  getTopProduct,
+} from "@/actions/business";
 
 export default async function Dashboard({
   params,
 }: {
-  params: { businessId: string };
+  params: Promise<{ businessId: string }>;
 }) {
   const client = new QueryClient();
 
+  const { businessId } = await params;
+
   await client.prefetchQuery({
-    queryKey: queryKeys.businessAnalytics(params.businessId),
-    queryFn: () => getBusinessAnalytics(params.businessId),
+    queryKey: queryKeys.businessAnalytics(businessId),
+    queryFn: () => getBusinessAnalytics(businessId),
   });
 
   await client.prefetchQuery({
-    queryKey: queryKeys.topProducts(params.businessId),
-    queryFn: () => getTopProduct(params.businessId),
+    queryKey: queryKeys.topProducts(businessId),
+    queryFn: () => getTopProduct(businessId),
+  });
+  await client.prefetchQuery({
+    queryKey: queryKeys.allProducts(businessId),
+    queryFn: () => getAllProducts(businessId),
   });
 
   return (

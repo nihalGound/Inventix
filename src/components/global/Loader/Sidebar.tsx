@@ -26,18 +26,21 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useGetAllBusiness } from "@/utils/queries";
+import { UserButton } from "@clerk/nextjs";
 
+// Modified sidebar items without href to build them dynamically
 const sidebarItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/" },
-  { icon: Package, label: "Products", href: "/products" },
-  { icon: DollarSign, label: "Sales", href: "/sales" },
-  { icon: FileText, label: "Create Bill", href: "/create-bill" },
-  { icon: Bell, label: "Notifications", href: "/notifications" },
-  { icon: Settings, label: "Settings", href: "/settings" },
+  { icon: LayoutDashboard, label: "Dashboard", path: "" },
+  { icon: Package, label: "Products", path: "products" },
+  { icon: DollarSign, label: "Sales", path: "sales" },
+  { icon: FileText, label: "Create Bill", path: "create-bill" },
+  { icon: Bell, label: "Notifications", path: "notifications" },
+  { icon: Settings, label: "Settings", path: "settings" },
 ];
 
 export function AppSidebar({ businessId }: { businessId: string }) {
   const router = useRouter();
+  const pathname = usePathname();
 
   const { data } = useGetAllBusiness();
   const { data: user } = data as {
@@ -64,7 +67,7 @@ export function AppSidebar({ businessId }: { businessId: string }) {
     image: string | null;
     name: string;
   }>(currentBusiness!);
-  const pathname = usePathname();
+
   const [isMobile, setIsMobile] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -76,6 +79,14 @@ export function AppSidebar({ businessId }: { businessId: string }) {
     window.addEventListener("resize", checkIsMobile);
     return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
+
+  // Check if a menu item is active
+  const isItemActive = (path: string) => {
+    if (path === "" && pathname === `/${businessId}`) {
+      return true;
+    }
+    return pathname === `/${businessId}/${path}`;
+  };
 
   const SidebarContent = () => (
     <>
@@ -107,12 +118,12 @@ export function AppSidebar({ businessId }: { businessId: string }) {
         <nav className="space-y-1 p-4">
           {sidebarItems.map((item) => (
             <Link
-              key={item.href}
-              href={item.href}
+              key={item.path}
+              href={`/dashboard/${businessId}/${item.path.trim()}`}
               onClick={() => setIsOpen(false)}
             >
               <Button
-                variant={pathname === item.href ? "secondary" : "ghost"}
+                variant={isItemActive(item.path) ? "secondary" : "ghost"}
                 className="w-full justify-start"
               >
                 <item.icon className="mr-2 h-4 w-4" />
@@ -125,10 +136,10 @@ export function AppSidebar({ businessId }: { businessId: string }) {
       <div className="p-4">
         <Separator className="my-4" />
         <Button variant="ghost" className="w-full justify-start">
-          <User className="mr-2 h-4 w-4" />
+          <UserButton />
           Profile
         </Button>
-        {!user.premium && (
+        {/* {!user.premium && (
           <div className="mt-4 p-4 bg-primary/10 rounded-lg">
             <h3 className="font-semibold flex items-center">
               <Star className="mr-2 h-4 w-4 text-yellow-400" />
@@ -144,7 +155,7 @@ export function AppSidebar({ businessId }: { businessId: string }) {
               Upgrade Now
             </Button>
           </div>
-        )}
+        )} */}
       </div>
     </>
   );

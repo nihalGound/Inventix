@@ -145,5 +145,3 @@ enum PaymentMode {
   UPI
   BANK_TRANSFER
 }
-
-

@@ -32,6 +32,7 @@ export const queryKeys = {
     businessId,
   ],
   getAllBusiness: () => ["businesses"],
+  getBusinessDetail: (businessId: string) => ["business",businessId],
   createBill: (businessId: string) => ["business", businessId, "create-bill"],
   getBills: (businessId: string) => ["business", businessId, "get-bills"],
   getBarcodeDetail: (barcode: string, businessId: string) => [
@@ -44,4 +45,5 @@ export const queryKeys = {
     value,
     businessId,
   ],
+  createProduct: (businessId: string) => ["create-product", businessId],
 };

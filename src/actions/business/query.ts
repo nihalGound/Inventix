@@ -97,11 +97,13 @@ export const findProducts = async (value: string, businessId: string) => {
         {
           name: {
             contains: value,
+            mode: "insensitive",
           },
         },
         {
           barcode: {
             contains: value,
+            mode: "insensitive",
           },
         },
       ],
@@ -523,6 +525,22 @@ export const getBill = async (billId: string, businessId: string) => {
     where: {
       id: billId,
       businessId: businessId,
+    },
+  });
+};
+
+export const addSale = async (
+  productId: string,
+  businessId: string,
+  quantity: number,
+  totalPrice: number
+) => {
+  return await client.sale.create({
+    data: {
+      quantity,
+      totalPrice,
+      businessId,
+      productId,
     },
   });
 };

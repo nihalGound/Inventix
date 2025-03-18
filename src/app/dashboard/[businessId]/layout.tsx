@@ -10,11 +10,12 @@ import React from "react";
 
 type Props = {
   children: React.ReactNode;
-  params: { businessId: string };
+  params: Promise<{ businessId: string }>;
 };
 
 async function Layout({ children, params }: Props) {
   //prefetch all queries related to params.businesssId;
+  const { businessId } = await params;
   const queryClient = new QueryClient();
   await queryClient.prefetchQuery({
     queryKey: queryKeys.getAllBusiness(),
@@ -23,7 +24,7 @@ async function Layout({ children, params }: Props) {
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className="h-screen w-full flex bg-[#171717]">
-        <AppSidebar businessId={params.businessId} />
+        <AppSidebar businessId={businessId} />
         <div className="w-full overflow-y-auto bg-[#171717]">{children}</div>
       </div>
     </HydrationBoundary>

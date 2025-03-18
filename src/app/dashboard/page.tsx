@@ -1,13 +1,28 @@
 "use client";
 import { useOnBoardUser } from "@/utils/queries";
 import { redirect } from "next/navigation";
-import React from "react";
+import React, { useEffect } from "react";
 
 function Layout() {
-  //auth user and send them to their "/dashboard/${businessId}" route
-  const { data, isPending } = useOnBoardUser();
+  const { mutate, data, isPending, isError } = useOnBoardUser();
 
-  const { status, data: user } = data as {
+  useEffect(() => {
+    // Trigger the mutation to onboard the user
+    mutate();
+  }, [mutate]);
+
+  // Handle loading state
+  if (isPending) {
+    return <>Loading ....</>;
+  }
+
+  // Handle error state
+  if (isError || !data) {
+    return <div>Something went wrong !!!</div>;
+  }
+
+  // TypeScript type for the expected data structure
+  const parsedData = data as {
     status: number;
     data: {
       business: {
@@ -24,13 +39,23 @@ function Layout() {
       updatedAt: Date;
     };
   };
-  if (!isPending && status === 401) {
+
+  const { status, data: user } = parsedData;
+
+  // Handle unauthorized users
+  if (status === 401) {
     redirect("/sign-in");
+    return null; // Prevent further rendering after redirect
   }
-  if (!isPending && (status === 200 || status === 201)) {
+
+  // Handle authorized users
+  if ((status === 200 || status === 201) && user.business.length > 0) {
     redirect(`/dashboard/${user.business[0].id}`);
+    return null; // Prevent further rendering after redirect
   }
-  return <div>Sometehing went wrong !!!</div>;
+
+  // Fallback for unexpected scenarios
+  return <div>Something went wrong !!!</div>;
 }
 
 export default Layout;

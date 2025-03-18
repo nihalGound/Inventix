@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSalesReport } from "@/utils/queries";
 import { DollarSign, Package, TrendingUp } from "lucide-react";
@@ -8,7 +8,7 @@ type Props = {
 };
 
 function SalesHeader({ businessId }: Props) {
-  const { data } = useSalesReport(businessId, "30_days");
+  const { data } = useSalesReport(businessId);
   const { data: stats } = data as {
     data: {
       totalSales: number;
@@ -27,7 +27,7 @@ function SalesHeader({ businessId }: Props) {
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalSales}</div>
+            <div className="text-2xl font-bold">$ {stats.totalSales}</div>
           </CardContent>
         </Card>
         <Card>
@@ -47,7 +47,7 @@ function SalesHeader({ businessId }: Props) {
             <DollarSign className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.averageSales}</div>
+            <div className="text-2xl font-bold">$ {stats.averageSales}</div>
           </CardContent>
         </Card>
       </div>

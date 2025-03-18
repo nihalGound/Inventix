@@ -23,20 +23,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTopProducts } from "@/utils/queries";
 import { useParams } from "next/navigation";
 
-// const salesData = [
-//   { month: "January", "Product A": 5000, "Product B": 4200, "Product C": 3800 },
-//   {
-//     month: "February",
-//     "Product A": 5200,
-//     "Product B": 4400,
-//     "Product C": 3900,
-//   },
-//   { month: "March", "Product A": 5500, "Product D": 4600, "Product C": 4100 },
-//   { month: "April", "Product A": 5800, "Product B": 4800, "Product C": 4300 },
-//   { month: "May", "Product A": 6000, "Product B": 5000, "Product C": 4500 },
-//   { month: "June", "Product D": 6200, "Product B": 5200, "Product C": 4700 },
-// ];
-
 const colors = ["#8884d8", "#82ca9d", "#ffc658"];
 
 export function SalesOverview() {
@@ -55,13 +41,24 @@ export function SalesOverview() {
       }[];
     }[];
   };
-  //below code is for fin top 3 product which occur most in salesdata.
+
+  // Transform sales data to the required format
+  const transformedData = salesData.map((entry) => {
+    const productRevenues = entry.products.reduce(
+      (acc, product) => ({ ...acc, [product.name]: product.revenue }),
+      {}
+    );
+    return { month: entry.month, ...productRevenues };
+  });
+
+  // Find top 3 products by occurrence in the data
   const productCount: Record<string, number> = {};
   salesData.forEach((entry) => {
-    Object.keys(entry).forEach((key) => {
-      if (key !== "month") productCount[key] = (productCount[key] || 0) + 1;
+    entry.products.forEach((product) => {
+      productCount[product.name] = (productCount[product.name] || 0) + 1;
     });
   });
+
   const sortedProducts = Object.entries(productCount)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3);
@@ -76,7 +73,7 @@ export function SalesOverview() {
     );
   };
 
-  if (fetching || productStatus != 200) {
+  if (fetching || productStatus !== 200) {
     return (
       <Card>
         <Skeleton className="w-full h-full" />
@@ -106,7 +103,7 @@ export function SalesOverview() {
           ))}
         </div>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={salesData}>
+          <LineChart data={transformedData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" />
             <YAxis />

@@ -6,6 +6,7 @@ import {
   StyleSheet,
   PDFDownloadLink,
 } from "@react-pdf/renderer";
+
 interface Product {
   id: string;
   name: string;
@@ -14,6 +15,8 @@ interface Product {
 }
 
 interface PrintableInvoiceProps {
+  billId: string;
+  date: Date;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -21,119 +24,102 @@ interface PrintableInvoiceProps {
   discount: number;
   total: number;
   businessName: string;
-  printMode?: boolean; // Add this to handle print-specific styling
 }
 
 const styles = StyleSheet.create({
   page: {
     padding: 40,
     fontFamily: "Helvetica",
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 1.6,
-    color: "#2D3748",
+    color: "#333333",
+    backgroundColor: "#f8f9fa",
   },
   headerContainer: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexDirection:"row"
-  },
-  header: {
-    fontSize: 32,
-    fontWeight: "bold",
-    marginBottom: 40,
-    color: "#1A202C",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  subheader: {
-    marginBottom:"10px",
-    fontSize: 18,
-    color: "#1A202C",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  field: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 8,
+    alignItems: "center",
+    marginBottom: 20,
   },
-  label: {
-    fontWeight: "medium",
-    color: "#718096",
+  businessName: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#007bff",
   },
-  value: {
+  invoiceTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
     textAlign: "right",
-    color: "#2D3748",
+    color: "#333333",
+  },
+  metadata: {
+    marginBottom: 20,
+    padding: 15,
+    backgroundColor: "#ffffff",
+    borderRadius: 6,
+    boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.1)",
+  },
+  metadataField: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  fieldLabel: {
+    fontWeight: "bold",
+    color: "#555555",
+  },
+  fieldValue: {
+    textAlign: "right",
+    color: "#333333",
   },
   tableContainer: {
-    marginVertical: 30,
+    marginTop: 20,
   },
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#F7FAFC",
-    padding: 12,
-    marginBottom: 10,
+    backgroundColor: "#007bff",
+    padding: 10,
     borderRadius: 4,
   },
   tableHeaderText: {
     fontWeight: "bold",
-    color: "#4A5568",
-    fontSize: 10,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    color: "#ffffff",
+    fontSize: 12,
+    flex: 1,
+    textAlign: "center",
   },
   tableRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 8,
+    padding: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#EDF2F7",
+    borderBottomColor: "#dddddd",
   },
   tableCell: {
     flex: 1,
-    textAlign: "right",
-    fontSize: 11,
-  },
-  tableCellLeft: {
-    flex: 2,
-    textAlign: "left",
-  },
-  divider: {
-    marginVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EDF2F7",
+    textAlign: "center",
+    fontSize: 12,
+    color: "#333333",
   },
   totalsSection: {
-    marginLeft: "auto",
-    width: "40%",
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: "#ffffff",
+    borderRadius: 6,
+    boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.1)",
   },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 8,
   },
-  finalTotal: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 2,
-    borderTopColor: "#2D3748",
-  },
-  finalTotalText: {
-    fontSize: 14,
+  totalLabel: {
     fontWeight: "bold",
-    color: "#1A202C",
+    color: "#555555",
   },
-  metadata: {
-    marginBottom: 30,
-    padding: 15,
-    backgroundColor: "#F7FAFC",
-    borderRadius: 4,
+  totalValue: {
+    textAlign: "right",
+    fontWeight: "bold",
+    color: "#333333",
   },
 });
 
@@ -145,63 +131,48 @@ const InvoicePDF = ({
   discount,
   total,
   businessName,
+  date,
+  billId,
 }: PrintableInvoiceProps) => (
   <Document>
     <Page size="A4" style={styles.page}>
-      <View>
-        <Text style={styles.header}>{businessName}</Text>
-        <Text style={styles.subheader}>Invoice</Text>
+      {/* Header */}
+      <View style={styles.headerContainer}>
+        <Text style={styles.businessName}>{businessName}</Text>
+        <Text style={styles.invoiceTitle}>Invoice</Text>
       </View>
 
       {/* Customer Details */}
       <View style={styles.metadata}>
-        <View style={styles.field}>
-          <Text style={styles.label}>BILLED TO</Text>
-          <Text style={styles.value}>{new Date().toLocaleDateString()}</Text>
+        <View style={styles.metadataField}>
+          <Text style={styles.fieldLabel}>Bill ID: {billId}</Text>
+          <Text style={styles.fieldValue}>{date.toLocaleDateString()}</Text>
         </View>
-        <View style={[styles.field, { marginTop: 10 }]}>
-          <View>
-            <Text
-              style={[styles.value, { fontWeight: "bold", textAlign: "left" }]}
-            >
-              {customerName}
-            </Text>
-            <Text
-              style={[styles.value, { textAlign: "left", color: "#718096" }]}
-            >
-              Contact : {customerPhone}
-            </Text>
-            <Text
-              style={[styles.value, { textAlign: "left", color: "#718096" }]}
-            >
-              Email: {customerEmail}
-            </Text>
-          </View>
+        <View style={styles.metadataField}>
+          <Text style={styles.fieldLabel}>Customer Name:</Text>
+          <Text style={styles.fieldValue}>{customerName}</Text>
+        </View>
+        <View style={styles.metadataField}>
+          <Text style={styles.fieldLabel}>Phone:</Text>
+          <Text style={styles.fieldValue}>{customerPhone}</Text>
+        </View>
+        <View style={styles.metadataField}>
+          <Text style={styles.fieldLabel}>Email:</Text>
+          <Text style={styles.fieldValue}>{customerEmail}</Text>
         </View>
       </View>
 
       {/* Product Table */}
       <View style={styles.tableContainer}>
         <View style={styles.tableHeader}>
-          <Text
-            style={[
-              styles.tableCell,
-              styles.tableCellLeft,
-              styles.tableHeaderText,
-            ]}
-          >
-            Item Description
-          </Text>
-          <Text style={[styles.tableCell, styles.tableHeaderText]}>Qty</Text>
-          <Text style={[styles.tableCell, styles.tableHeaderText]}>Price</Text>
-          <Text style={[styles.tableCell, styles.tableHeaderText]}>Amount</Text>
+          <Text style={styles.tableHeaderText}>Item</Text>
+          <Text style={styles.tableHeaderText}>Qty</Text>
+          <Text style={styles.tableHeaderText}>Price</Text>
+          <Text style={styles.tableHeaderText}>Total</Text>
         </View>
-
         {products.map((product) => (
           <View key={product.id} style={styles.tableRow}>
-            <Text style={[styles.tableCell, styles.tableCellLeft]}>
-              {product.name}
-            </Text>
+            <Text style={styles.tableCell}>{product.name}</Text>
             <Text style={styles.tableCell}>{product.quantity}</Text>
             <Text style={styles.tableCell}>${product.price.toFixed(2)}</Text>
             <Text style={styles.tableCell}>
@@ -214,16 +185,18 @@ const InvoicePDF = ({
       {/* Totals */}
       <View style={styles.totalsSection}>
         <View style={styles.totalRow}>
-          <Text style={styles.label}>Subtotal</Text>
-          <Text style={styles.value}>${(total + discount).toFixed(2)}</Text>
+          <Text style={styles.totalLabel}>Subtotal:</Text>
+          <Text style={styles.totalValue}>
+            ${(total + discount).toFixed(2)}
+          </Text>
         </View>
         <View style={styles.totalRow}>
-          <Text style={styles.label}>Discount</Text>
-          <Text style={styles.value}>{discount.toFixed(2)}%</Text>
+          <Text style={styles.totalLabel}>Discount:</Text>
+          <Text style={styles.totalValue}>{discount.toFixed(2)}%</Text>
         </View>
-        <View style={styles.finalTotal}>
-          <Text style={styles.finalTotalText}>Total</Text>
-          <Text style={styles.finalTotalText}>${total.toFixed(2)}</Text>
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>Total:</Text>
+          <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
         </View>
       </View>
     </Page>

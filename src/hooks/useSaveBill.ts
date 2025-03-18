@@ -14,6 +14,7 @@ export const useSaveBill = (
   discount?: number
 ) => {
   const [billId, setBillId] = useState<string>("");
+  const [billDate, setBillDate] = useState<Date | undefined>();
   const { data, isPending, mutate } = useCreateBill(
     businessId,
     items,
@@ -23,23 +24,33 @@ export const useSaveBill = (
     notes,
     discount
   );
-  const { data: bill, status } = data as {
-    status: number;
-    data: {
-      message: string;
-      bill: string;
-    };
-  };
 
+  // Safely check if data is available
   useEffect(() => {
-    if (!isPending && status === 201) {
-      setBillId(bill.bill);
+    if (!isPending && data) {
+      const { status, data: responseData } = data as {
+        status: number;
+        data: {
+          message: string;
+          bill: {
+            billId: string;
+            date: Date;
+          };
+        };
+      };
+
+      if (status === 201 && responseData?.bill) {
+        setBillId(responseData.bill.billId);
+        setBillDate(responseData.bill.date);
+      }
     }
-  }, [isPending]);
+  }, [isPending, data]);
 
   return {
     mutate,
     isPending,
     billId,
+    billDate,
+    setBillId
   };
 };
