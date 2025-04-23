@@ -17,8 +17,6 @@ import {
   LayoutDashboard,
   Package,
   Settings,
-  Star,
-  User,
   Menu,
   FileText,
 } from "lucide-react";

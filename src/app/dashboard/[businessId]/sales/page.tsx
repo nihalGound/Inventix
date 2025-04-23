@@ -18,7 +18,7 @@ import {
 } from "@/actions/business";
 import SalesHeader from "./_components/SalesHeader";
 
-export async function Sales({
+async function Sales({
   params,
 }: {
   params: Promise<{ businessId: string }>;
